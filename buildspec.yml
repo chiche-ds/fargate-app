@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 024848483616.dkr.ecr.us-east-1.amazonaws.com
+      - echo Build started on `date`
+      - echo Building the Docker image...
+  build:
+    commands:
+      - docker build -t fargate-app .
+      - docker tag fargate-app:latest 024848483616.dkr.ecr.us-east-1.amazonaws.com/fargate-app:latest
+  post_build:
+    commands:
+      - echo Pushing the Docker image to ECR...
+      - docker push 024848483616.dkr.ecr.us-east-1.amazonaws.com/fargate-app:latest
+      - echo Deploying the updated Docker image to ECS...
+      - aws ecs update-service --cluster fargate-cluster --service fargate-service --force-new-deployment
+artifacts:
+  files:
+    - "**/*"
